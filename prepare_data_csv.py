@@ -1,42 +1,49 @@
 ###
 from glob2 import glob
 import pandas as pd
-from sklearn.model_selection import train_test_split
 import argparse
 import os
+from tqdm import tqdm
+import json
 
-def get_list_image_to_csv(lst_train, output_csv):
+def get_list_image_to_csv(lst_train, output_path, id2id_encode):
   csv_content = []
   for img_path in lst_train:
     split_img = img_path.split("/")
+    image_name = split_img[-1]
+    class_id = split_img[-2]
     csv_content.append({
         'filepath': img_path,
-        'image_name':split_img[-1],
-        'id': split_img[-2][:-1]
+        'image_name':image_name,
+        'id': class_id,
+        'id_encode': id2id_encode[class_id]
     })
 
   df = pd.DataFrame(csv_content)
-  df.to_csv(output_csv, index=False)
+  df.to_csv(output_path, index=False)
   print("DONE")
 def parse_args():
 
   parser = argparse.ArgumentParser()
   parser.add_argument('--data_path', type=str, required=True)
   parser.add_argument('--output_path', type=str, required=True)
-  parser.add_argument('--split_test', action='store_true')
   args, _ = parser.parse_known_args()
   return args
 
 if __name__ == "__main__":
   args = parse_args()
-  lst_img = glob(f"{args.data_path}/**/*.jpg")
+  lst_class = glob(f"{args.data_path}/*")
+  lst_class.sort()
 
-  os.makedirs(args.output_path, exist_ok = True)
-  lst_train, lst_val = train_test_split(lst_img, test_size = .2, random_state = 42)
+  id2id_encode = {x.split("/")[-1]:idx for idx, x in enumerate(lst_class)}
+  json.dump(id2id_encode, open(f"{args.data_path}/id2id_encode.json", "w"))
 
-  if args.split_test:
-    lst_train, lst_test = train_test_split(lst_train, test_size=.1 ,random_state = 42)
-    get_list_image_to_csv(lst_test, f'{args.output_path}/test.csv')
+  lst_train, lst_val = [], []
+  for class_name in tqdm(lst_class):
+    lst_img = os.listdir(class_name)
+    lst_train.extend(list(map(lambda x: f'{class_name}/{x}', lst_img[:-10])))
+    lst_val.extend(list(map(lambda x: f'{class_name}/{x}', lst_img[-10:])))
 
-  get_list_image_to_csv(lst_train, f'{args.output_path}/train.csv')
-  get_list_image_to_csv(lst_val, f'{args.output_path}/val.csv')
+
+  get_list_image_to_csv(lst_train, f'{args.output_path}/train.csv', id2id_encode)
+  get_list_image_to_csv(lst_val, f'{args.output_path}/val.csv', id2id_encode)
