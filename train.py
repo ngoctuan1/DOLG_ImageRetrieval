@@ -72,6 +72,20 @@ class Mish(nn.Module):
     def forward(self, input_tensor):
         return Mish_func.apply(input_tensor)
 
+class EarlyStopping():
+    def __init__(self, tolerance=5, min_delta=0):
+
+        self.tolerance = tolerance
+        self.min_delta = min_delta
+        self.counter = 0
+        self.early_stop = False
+
+    def __call__(self, train_loss, validation_loss):
+        if (validation_loss - train_loss) > self.min_delta:
+            self.counter +=1
+            if self.counter >= self.tolerance:  
+                self.early_stop = True
+
 class Ranger(Optimizer):
 
     def __init__(self, params, lr=1e-3,                       # lr
@@ -456,6 +470,7 @@ def train(cfg, args):
 
     model = DOLG(cfg).cuda() if args.model_name == "dolg" else SwinTransformer(cfg).cuda()
     model = apex.parallel.convert_syncbn_model(model)
+    early_stopping = EarlyStopping(tolerance=5, min_delta=10)
 
     ####
     if args.use_mish:
@@ -570,6 +585,11 @@ def train(cfg, args):
             torch.save(ckpt, save_dir)
             gap_m_max = gap_m
     
+        early_stopping(train_loss, val_loss)
+        if early_stopping.early_stop:
+            print(f'Stop at epoch {epoch}')
+            break
+
     df = pd.DataFrame(history)
     df.to_csv(save_loss_name, index = False)
 
