@@ -435,7 +435,7 @@ def make_loss(loss_name,cfg, margins, out_dim):
         loss_fn = CenterLoss(num_classes=out_dim, feat_dim=cfg['batch_size'], use_gpu=True)
     return loss_fn
 
-def train(cfg, args):
+def train(cfg, args, save_loss_name):
 
     # get dataframe
     df_train, out_dim = get_df(args.trainCSVPath)
