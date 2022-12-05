@@ -10,6 +10,7 @@ import os
 import glob
 import re
 import math
+import pandas as pd
 
 from torch.backends import cudnn
 from tqdm import tqdm as tqdm
@@ -419,7 +420,7 @@ def get_loader(cfg, df):
 # loss func
 def make_loss(loss_name,cfg, margins, out_dim):
     if loss_name == "arcface_dynamicmargin":
-        loss_fn = ArcFaceLossAdaptiveMargin(margins=margins, s=cfg['arcface_s'], out_dim = out_dim)
+        loss_fn = ArcFaceLossAdaptiveMargin(out_dim = out_dim, margins=margins, s=cfg['arcface_s'])
     elif loss_name=="cosface":
         loss_fn = Cosface(out_features = cfg['batch_size'], in_features=out_dim, m=torch.FloatTensor(margins).cuda())
     elif loss_name == "CE_smooth_loss":
@@ -521,6 +522,7 @@ def train(cfg, args):
 
      # train & valid loop
     gap_m_max = 0
+    history = []
     for epoch in range(cfg['train']['start_from_epoch'], cfg['train']['n_epochs']+1):
         print(time.ctime(), 'Epoch:', epoch)
         if args.use_central_gradient:
@@ -538,7 +540,12 @@ def train(cfg, args):
         train_loss = train_epoch(model, train_loader, optimizer, loss_fn)
         val_loss, acc_m, gap_m = val_epoch(model, val_loader, loss_fn)
         
-        
+        history.append({
+            'train_loss': train_loss,
+            'val_loss': val_loss,
+            'val_acc': val_acc,
+            'gap_m': gap_m
+        })
 
         content = time.ctime() + ' ' + \
                 f'Epoch {epoch}, lr: {optimizer.param_groups[0]["lr"]:.7f}, \
@@ -562,6 +569,9 @@ def train(cfg, args):
             print('gap_m_max ({:.6f} --> {:.6f}). Saving model to {}'.format(gap_m_max, gap_m, save_dir))
             torch.save(ckpt, save_dir)
             gap_m_max = gap_m
+    
+    df = pd.DataFrame(history)
+    df.to_csv(save_loss_name, index = False)
 
 
 if __name__ == '__main__':
@@ -574,6 +584,11 @@ if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = cfg['train']['CUDA_VISIBLE_DEVICES']
     set_seed(0)
     
+    base_file_save_loss = './save_loss'
+    os.makedirs(base_file_save_loss, exist_ok = True)
+    save_loss_name = f'{base_file_save_loss}/{args.model_name}_{args.config_name}_{args.loss_name}.csv'
+    
+    
     if cfg['train']['CUDA_VISIBLE_DEVICES'] != '-1':
         torch.backends.cudnn.benchmark = True
         torch.cuda.set_device(cfg['train']['local_rank'])
@@ -581,4 +596,4 @@ if __name__ == '__main__':
             backend='nccl', init_method='env://')
         cudnn.benchmark = True
 
-    train(cfg, args)
+    train(cfg, args, save_loss_name)
