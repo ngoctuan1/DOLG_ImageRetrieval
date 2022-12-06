@@ -449,7 +449,7 @@ def make_loss(loss_name,cfg, margins, out_dim):
         loss_fn = CenterLoss(num_classes=out_dim, feat_dim=cfg['batch_size'], use_gpu=True)
     return loss_fn
 
-def train(cfg, args, save_loss_name):
+def train(cfg, args, additional_cfg):
 
     # get dataframe
     df_train, out_dim = get_df(args.trainCSVPath)
@@ -530,10 +530,13 @@ def train(cfg, args, save_loss_name):
    
 
     # Directories
-    model_path = increment_path(Path(cfg['train']['model_dir']), exist_ok=args.exist_ok)
-    os.makedirs(model_path, exist_ok=True)
-    last = os.path.join(model_path, 'last.pth')
-    best = os.path.join(model_path, 'best.pth')
+    # model_path = increment_path(Path(cfg['train']['model_dir']), exist_ok=args.exist_ok)
+    # os.makedirs(model_path, exist_ok=True)
+    # last = os.path.join(model_path, 'last.pth')
+    # best = os.path.join(model_path, 'best.pth')
+
+    last = os.path.join(cfg['train']['model_dir'], f'{additional_cfg["model_str"]}_last.pth')
+    best = os.path.join(cfg['train']['model_dir'], f'{additional_cfg["model_str"]}_best.pth')
 
      # train & valid loop
     gap_m_max = 0
@@ -558,7 +561,7 @@ def train(cfg, args, save_loss_name):
         history.append({
             'train_loss': train_loss,
             'val_loss': val_loss,
-            'val_acc': val_acc,
+            'val_acc': acc_m,
             'gap_m': gap_m
         })
 
@@ -578,20 +581,20 @@ def train(cfg, args, save_loss_name):
         if best_fitness == gap_m:
             print(f"Save best epoch: {epoch}")
             torch.save(ckpt, best)
-        if epoch % cfg['train']['save_per_epoch'] == 0:
-            save_dir = os.path.join(model_path, 
-                            "dolg_{}_{}.pth".format(cfg['train']['model_name'], epoch))
-            print('gap_m_max ({:.6f} --> {:.6f}). Saving model to {}'.format(gap_m_max, gap_m, save_dir))
-            torch.save(ckpt, save_dir)
-            gap_m_max = gap_m
+
+        # save_dir = os.path.join(model_path, 
+        #                 "dolg_{}_{}.pth".format(cfg['train']['model_name'], epoch))
+        print('gap_m_max ({:.6f} --> {:.6f}). Saving model to {}'.format(gap_m_max, gap_m, last))
+        torch.save(ckpt, last)
+        gap_m_max = gap_m
     
         early_stopping(train_loss, val_loss)
         if early_stopping.early_stop:
-            print(f'Stop at epoch {epoch}')
+            print(f'Early Stopping Stop at epoch {epoch}')
             break
 
     df = pd.DataFrame(history)
-    df.to_csv(save_loss_name, index = False)
+    df.to_csv(f"{additional_cfg['save_loss_name']}/{additional_cfg['model_str']}.csv", index = False)
 
 
 if __name__ == '__main__':
@@ -606,7 +609,12 @@ if __name__ == '__main__':
     
     base_file_save_loss = './save_loss'
     os.makedirs(base_file_save_loss, exist_ok = True)
-    save_loss_name = f'{base_file_save_loss}/{args.model_name}_{args.config_name}_{args.loss_name}.csv'
+    os.makedirs(cfg['train']['model_dir'], exist_ok = True)
+
+    additional_cfg = {
+        'model_str':f'{args.model_name}_{args.config_name}_{args.loss_name}',
+        'save_loss_name': f'{base_file_save_loss}'
+    }
     
     
     if cfg['train']['CUDA_VISIBLE_DEVICES'] != '-1':
@@ -616,4 +624,4 @@ if __name__ == '__main__':
             backend='nccl', init_method='env://')
         cudnn.benchmark = True
 
-    train(cfg, args, save_loss_name)
+    train(cfg, args, additional_cfg)

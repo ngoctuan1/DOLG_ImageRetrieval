@@ -44,6 +44,7 @@ if __name__ == "__main__":
     lst_train.extend(list(map(lambda x: f'{class_name}/{x}', lst_img[:-10])))
     lst_val.extend(list(map(lambda x: f'{class_name}/{x}', lst_img[-10:])))
 
+  os.makedirs(args.output_path, exist_ok=True)
 
   get_list_image_to_csv(lst_train, f'{args.output_path}/train.csv', id2id_encode)
   get_list_image_to_csv(lst_val, f'{args.output_path}/val.csv', id2id_encode)
