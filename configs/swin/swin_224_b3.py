@@ -23,7 +23,7 @@ cfg_swin_224_b3 = {
         'num_instance': 16,
         'num_workers': 2,
         'init_lr': 0.00001, #1e-4
-        'n_epochs': 2,
+        'n_epochs': 100,
         'start_from_epoch': 1,
         'use_amp': False,
         'model_dir': './saved', # save model
@@ -33,7 +33,7 @@ cfg_swin_224_b3 = {
         'sampler': 'id_uniform'
       },
     "val": {
-        'batch_size': 2,
+        'batch_size': 32,
         'num_workers': 5,
         'image_size': 224,
         'num_instance': 16,

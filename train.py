@@ -594,7 +594,7 @@ def train(cfg, args, additional_cfg):
             break
 
     df = pd.DataFrame(history)
-    df.to_csv(f"{additional_cfg['save_loss_name']}/{additional_cfg['model_str']}.csv", index = False)
+    df.to_csv(f"{additional_cfg['save_loss_name']}/{additional_cfg['model_str']}/summary.csv", index = False)
 
 
 if __name__ == '__main__':

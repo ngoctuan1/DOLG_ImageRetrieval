@@ -33,7 +33,7 @@ cfg_swin_224_b5 = {
         'sampler': 'id_uniform'
       },
     "val": {
-        'batch_size': 2,
+        'batch_size': 32,
         'num_workers': 5,
         'image_size': 224,
         'num_instance': 16,

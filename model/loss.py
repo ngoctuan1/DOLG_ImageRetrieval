@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torch.autograd
 from torch.nn import Parameter
 import math
+import numpy as np
 
 class ArcFaceLossAdaptiveMargin(nn.modules.Module):
     def __init__(self, out_dim, margins, s=30.0):
