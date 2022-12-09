@@ -428,7 +428,7 @@ def val_epoch(model, valid_loader, loss_fn, get_output=False):
 def get_loader(cfg, df):
     sampler = torch.utils.data.distributed.DistributedSampler(df)
     loader = torch.utils.data.DataLoader(df, batch_size=cfg['batch_size'], num_workers=cfg['num_workers'],
-                                                shuffle=sampler is None, sampler=sampler, drop_last=True)
+                                                shuffle=True, sampler=sampler, drop_last=True)
     return sampler, loader
 
 # loss func
