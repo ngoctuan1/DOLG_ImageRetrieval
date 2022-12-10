@@ -428,7 +428,7 @@ def val_epoch(model, valid_loader, loss_fn, get_output=False):
 def get_loader(cfg, df):
     sampler = torch.utils.data.distributed.DistributedSampler(df)
     loader = torch.utils.data.DataLoader(df, batch_size=cfg['batch_size'], num_workers=cfg['num_workers'],
-                                                shuffle=True, sampler=sampler, drop_last=True)
+                                                shuffle=sampler is None, sampler=sampler, drop_last=True)
     return sampler, loader
 
 # loss func
@@ -459,8 +459,8 @@ def train(cfg, args, additional_cfg):
     tmp = np.sqrt(
         1 / np.sqrt(df_train['id_encode'].value_counts().sort_index().values))
     alpha = 1e-6
-    margins = (tmp - tmp.min()) / (tmp.max() - tmp.min() + alpha) * 0.45 + 0.05
-
+    margins = (tmp - tmp.min()) / (tmp.max() - tmp.min()) * 0.45 + 0.05
+    print(margins)
     # get augmentations (Resize and Normalize)
     transforms_train, transforms_val = get_transforms(cfg['train']['image_size'])
 
@@ -470,7 +470,7 @@ def train(cfg, args, additional_cfg):
 
     model = DOLG(cfg).cuda() if args.model_name == "dolg" else SwinTransformer(cfg).cuda()
     model = apex.parallel.convert_syncbn_model(model)
-    early_stopping = EarlyStopping(tolerance=5, min_delta=10)
+    # early_stopping = EarlyStopping(tolerance=5, min_delta=10)
 
     ####
     if args.use_mish:
@@ -588,10 +588,10 @@ def train(cfg, args, additional_cfg):
         torch.save(ckpt, last)
         gap_m_max = gap_m
     
-        early_stopping(train_loss, val_loss)
-        if early_stopping.early_stop:
-            print(f'Early Stopping Stop at epoch {epoch}')
-            break
+        # early_stopping(train_loss, val_loss)
+        # if early_stopping.early_stop:
+        #     print(f'Early Stopping Stop at epoch {epoch}')
+        #     break
 
     df = pd.DataFrame(history)
     df.to_csv(f"{additional_cfg['save_loss_name']}/{additional_cfg['model_str']}/summary.csv", index = False)
