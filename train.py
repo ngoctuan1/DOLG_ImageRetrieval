@@ -447,6 +447,8 @@ def make_loss(loss_name,cfg, margins, out_dim):
         loss_fn = CircleLoss(m=0.25, gamma=64)
     elif loss_name == "centerloss":
         loss_fn = CenterLoss(num_classes=out_dim, feat_dim=cfg['batch_size'], use_gpu=True)
+    elif loss_name =='focalloss':
+        loss_fn = FocalLoss(gamma=2.0)
     return loss_fn
 
 def train(cfg, args, additional_cfg):

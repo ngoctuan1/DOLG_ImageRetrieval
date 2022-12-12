@@ -32,6 +32,15 @@ python -u -m torch.distributed.launch --nproc_per_node=1 \
           --config_name swin_224_b3 \
           --trainCSVPath data/train.csv \
           --valCSVPath data/val.csv \
-          --loss_name circleloss			  
+          --loss_name circleloss			
+
+echo "Run dolg + focal loss"  
+python -u -m torch.distributed.launch --nproc_per_node=1\
+            train.py\
+            --model_name dolg\
+            --config_name dolg_b5_step3\
+            --trainCSVPath data/train.csv\
+            --valCSVPath data/val.csv\
+            --loss_name focalloss
 
 		  
