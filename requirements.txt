@@ -1,4 +1,4 @@
-# torch1.21.1+cuda11.3
+# torch1.12.1+cuda11.3
 pandas
 warmup_scheduler==0.3
 tqdm==4.64.0
