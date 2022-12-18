@@ -38,6 +38,8 @@ def parse_args():
 
 if __name__ == "__main__":
   args = parse_args()
+  os.makedirs(args.output_path, exist_ok=True)
+  
   lst_class = glob(f"{args.data_path}/*")
   lst_class.sort()
 
@@ -49,8 +51,7 @@ if __name__ == "__main__":
     lst_img = os.listdir(class_name)
     lst_train.extend(list(map(lambda x: f'{class_name}/{x}', lst_img[:-10])))
     lst_val.extend(list(map(lambda x: f'{class_name}/{x}', lst_img[-10:])))
-
-  os.makedirs(args.output_path, exist_ok=True)
+  
   if args.drop_minor_class:
     get_list_image_to_csv(lst_train, f'{args.output_path}/train.csv', id2id_encode, drop_minor_class=True)
     get_list_image_to_csv(lst_val, f'{args.output_path}/val.csv', id2id_encode, drop_minor_class=True)
